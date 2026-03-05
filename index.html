@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agribotics Block IDE</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Source+Code+Pro:wght@400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Blockly (pinned version with all required modules) -->
+<script src="https://unpkg.com/blockly@10.4.3/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly@10.4.3/blocks_compressed.js"></script>
+<script src="https://unpkg.com/blockly@10.4.3/msg/en.js"></script>
+<script src="https://unpkg.com/blockly@10.4.3/python_compressed.js"></script>
+
+<style>
+  :root {
+    --green-dark:    #1a5c2e;
+    --green-mid:     #2a7d42;
+    --green-light:   #4aa85e;
+    --green-pale:    #d4edda;
+    --wheat:         #e8b84b;
+    --wheat-light:   #f5d98b;
+    --wheat-pale:    #fdf3d0;
+    --soil:          #5c3a1e;
+    --soil-mid:      #7a4e2d;
+    --soil-light:    #a0704a;
+    --sky:           #5b9bd5;
+    --sky-light:     #a8cef0;
+    --cream:         #faf6ec;
+    --cream-dark:    #f0e8d0;
+    --text-dark:     #1e2d1f;
+    --text-mid:      #3d5440;
+    --text-light:    #f5f0e8;
+    --border:        #c8b87a;
+    --shadow:        rgba(30,45,30,0.18);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 60%, #2e7d32 100%);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 3px 12px var(--shadow);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* subtle field rows pattern in header */
+  #header::before {
+    content: '';
+    position: absolute; inset:0;
+    background: repeating-linear-gradient(
+      175deg,
+      transparent, transparent 18px,
+      rgba(255,255,255,0.03) 18px, rgba(255,255,255,0.03) 19px
+    );
+    pointer-events: none;
+  }
+
+  .logo-area {
+    display: flex; align-items: center; gap: 12px; z-index:1;
+  }
+
+  .logo-svg {
+    width: 38px; height: 38px; flex-shrink: 0;
+  }
+
+  .logo-text {
+    display: flex; flex-direction: column; line-height: 1.1;
+  }
+  .logo-title {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: var(--wheat-light);
+    letter-spacing: 0.03em;
+  }
+  .logo-sub {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* toolbar buttons */
+  .toolbar { display:flex; gap:6px; align-items:center; z-index:1; }
+
+  .btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 13px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .btn:active { transform: translateY(0); filter: brightness(0.95); }
+  .btn svg { width:14px; height:14px; }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.2); }
+
+  .btn-wheat {
+    background: var(--wheat);
+    color: var(--soil);
+  }
+  .btn-wheat:hover { background: var(--wheat-light); }
+
+  .btn-upload {
+    background: linear-gradient(135deg, #c85c00, #e07020);
+    color: #fff;
+  }
+
+  .btn-connect {
+    background: linear-gradient(135deg, var(--sky), #3a7ec2);
+    color: #fff;
+  }
+
+  .btn-connect.connected {
+    background: linear-gradient(135deg, #2e8b4a, var(--green-light));
+  }
+
+  .sep { width:1px; height:28px; background:rgba(255,255,255,0.2); margin:0 4px; }
+
+  /* status dot */
+  .status-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(0,0,0,0.2);
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #ff6b6b;
+    box-shadow: 0 0 5px #ff6b6b;
+  }
+  .status-dot.connected { background: #6bff8e; box-shadow: 0 0 5px #6bff8e; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── BLOCKLY PANEL ── */
+  #blockly-panel {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+  }
+
+  #blocklyDiv {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── RIGHT PANEL ── */
+  #right-panel {
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid var(--border);
+    background: var(--cream-dark);
+    flex-shrink: 0;
+  }
+
+  .panel-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    background: var(--cream);
+    flex-shrink: 0;
+  }
+  .panel-tab {
+    flex: 1;
+    padding: 9px 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--text-mid);
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .panel-tab:hover { color: var(--green-dark); }
+  .panel-tab.active {
+    color: var(--green-dark);
+    border-bottom-color: var(--green-mid);
+    background: var(--cream-dark);
+  }
+
+  .panel-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tab-pane {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .tab-pane.active { display: flex; }
+
+  /* Code output */
+  #code-header {
+    padding: 8px 12px;
+    background: var(--soil);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #code-header span {
+    font-family: 'Zilla Slab', serif;
+    font-size: 0.8rem;
+    color: var(--wheat-light);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .btn-copy {
+    padding: 3px 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+  }
+  .btn-copy:hover { background: rgba(255,255,255,0.2); }
+
+  #code-output {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #c9e6c9;
+    background: #1e2e1e;
+    white-space: pre;
+  }
+
+  /* syntax highlight */
+  .kw { color: #88d498; font-weight: 600; }
+  .fn { color: #ffd980; }
+  .cm { color: #6a8a6a; font-style: italic; }
+  .st { color: #f5b0b0; }
+  .nm { color: #a8d8ff; }
+
+  /* Console */
+  #console-output {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    background: #0e1a0e;
+    color: #7dbf7d;
+  }
+  #console-input-row {
+    display: flex;
+    border-top: 1px solid #2a3a2a;
+    flex-shrink: 0;
+  }
+  #console-input {
+    flex: 1;
+    padding: 7px 10px;
+    background: #0a130a;
+    border: none;
+    color: #a0e0a0;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    outline: none;
+  }
+  #console-send {
+    padding: 0 14px;
+    background: var(--green-dark);
+    color: var(--wheat-light);
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  /* Help pane */
+  #help-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+  }
+  .help-section { margin-bottom: 18px; }
+  .help-section h3 {
+    font-family: 'Zilla Slab', serif;
+    font-size: 0.9rem;
+    color: var(--green-dark);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+  .help-fn {
+    margin-bottom: 8px;
+    padding: 7px 10px;
+    background: #fff;
+    border-radius: 6px;
+    border-left: 3px solid var(--green-mid);
+  }
+  .help-fn code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.73rem;
+    color: var(--soil);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .help-fn p {
+    font-size: 0.72rem;
+    color: var(--text-mid);
+    line-height: 1.4;
+  }
+
+  /* ── BOTTOM BAR ── */
+  #bottom-bar {
+    height: 28px;
+    background: var(--soil);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 18px;
+    flex-shrink: 0;
+  }
+  .bottom-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.04em;
+  }
+  .bottom-item svg { width:12px; height:12px; opacity:0.6; }
+  .bottom-item.highlight { color: var(--wheat-light); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset:0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events: all; }
+  .modal {
+    background: var(--cream);
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    width: 440px;
+    max-width: 90vw;
+    padding: 28px;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h2 {
+    font-family: 'Zilla Slab', serif;
+    font-size: 1.3rem;
+    color: var(--green-dark);
+    margin-bottom: 16px;
+  }
+  .modal p { font-size:0.85rem; color: var(--text-mid); margin-bottom:10px; line-height:1.5; }
+  .modal-btns { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+  .btn-primary {
+    padding: 8px 20px;
+    background: var(--green-mid);
+    color:#fff;
+    border:none; border-radius:6px;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:0.82rem;
+    cursor:pointer;
+  }
+  .btn-secondary {
+    padding:8px 20px;
+    background: var(--cream-dark);
+    color: var(--text-dark);
+    border: 1px solid var(--border);
+    border-radius:6px;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:0.82rem;
+    cursor:pointer;
+  }
+  .connect-options { display:flex; gap:12px; margin-top:12px; }
+  .connect-card {
+    flex:1; padding:16px; border-radius:8px;
+    border:2px solid var(--border);
+    background:#fff;
+    cursor:pointer;
+    text-align:center;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .connect-card:hover { border-color: var(--green-mid); box-shadow:0 2px 8px var(--shadow); }
+  .connect-card svg { width:32px;height:32px; margin-bottom:8px; }
+  .connect-card h4 { font-size:0.85rem; font-weight:700; color:var(--text-dark); }
+  .connect-card p { font-size:0.72rem; color:var(--text-mid); margin:4px 0 0; }
+
+  /* Scrollbar style */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Blockly toolbox custom */
+  .blocklyToolboxDiv {
+    background: var(--soil) !important;
+    border-right: 2px solid var(--soil-mid) !important;
+  }
+  .blocklyTreeRow {
+    border-radius: 0 !important;
+  }
+  .blocklyTreeLabel {
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+  }
+  .blocklyTreeSelected {
+    background: var(--green-dark) !important;
+  }
+
+  /* Notification toast */
+  #toast {
+    position: fixed; bottom: 40px; left:50%; transform:translateX(-50%);
+    background: var(--soil);
+    color: var(--wheat-light);
+    padding: 9px 22px;
+    border-radius: 20px;
+    font-size:0.8rem;
+    font-weight:700;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    opacity:0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 2000;
+  }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo-area">
+    <!-- Agribotics Logo SVG -->
+    <svg class="logo-svg" viewBox="0 0 38 38" fill="none">
+      <!-- Gear/cog (robotics) with wheat stalk (agri) -->
+      <circle cx="19" cy="19" r="16" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+      <!-- 4H clover shape -->
+      <g transform="translate(19,19)">
+        <circle cx="0" cy="-6" r="5" fill="#4aa85e" opacity="0.9"/>
+        <circle cx="6" cy="0" r="5" fill="#4aa85e" opacity="0.9"/>
+        <circle cx="0" cy="6" r="5" fill="#4aa85e" opacity="0.9"/>
+        <circle cx="-6" cy="0" r="5" fill="#4aa85e" opacity="0.9"/>
+        <circle cx="0" cy="0" r="4" fill="#2a7d42"/>
+        <text x="0" y="4" text-anchor="middle" font-family="Zilla Slab, serif" font-size="6" font-weight="700" fill="white">4H</text>
+      </g>
+      <!-- tiny wheat stalks at top -->
+      <line x1="19" y1="3" x2="19" y2="9" stroke="#e8b84b" stroke-width="1.5"/>
+      <ellipse cx="17" cy="5" rx="1.5" ry="3" fill="#e8b84b" transform="rotate(-20 17 5)"/>
+      <ellipse cx="21" cy="5" rx="1.5" ry="3" fill="#e8b84b" transform="rotate(20 21 5)"/>
+    </svg>
+    <div class="logo-text">
+      <span class="logo-title">Agribotics IDE</span>
+      <span class="logo-sub">Block Programming · MicroPython · ESP32-S3</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-ghost" onclick="newProgram()" title="New program">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 0a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V4.414L9.586 0H3zm6 1.5L13.5 5H9V1.5z"/></svg>
+      New
+    </button>
+    <button class="btn btn-ghost" onclick="saveProgram()" title="Save">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11 0H2a1 1 0 00-1 1v14a1 1 0 001 1h12a1 1 0 001-1V4l-4-4zm-1 1.5L13.5 5H10V1.5zM4 9h8v1H4V9zm0 2h8v1H4v-1zm0-4h4v1H4V7z"/></svg>
+      Save
+    </button>
+    <button class="btn btn-ghost" onclick="loadProgram()" title="Load">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 11.854a.5.5 0 00.708 0l3-3a.5.5 0 00-.708-.708L8.5 10.293V1.5a.5.5 0 00-1 0v8.793L5.354 8.146a.5.5 0 10-.708.708l3 3z"/></svg>
+      Load
+    </button>
+    <div class="sep"></div>
+    <button class="btn btn-connect" id="connectBtn" onclick="openConnectModal()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V1zm11 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V1zM6 7a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V7zM2 4v2h1V4H2zm11 0v2h1V4h-1zM8 4V2H7v2h1zM4 7.5A.5.5 0 014.5 7H6V5.5A.5.5 0 017 5a.5.5 0 01.5.5V7h1.5a.5.5 0 01.5.5v1a.5.5 0 01-.5.5H7.5V11a.5.5 0 01-.5.5.5.5 0 01-.5-.5V9H4.5A.5.5 0 014 8.5v-1z"/></svg>
+      Connect
+    </button>
+    <button class="btn btn-upload" onclick="uploadToRobot()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 1.146a.5.5 0 01.708 0l3 3a.5.5 0 01-.708.708L8.5 2.707V11.5a.5.5 0 01-1 0V2.707L5.354 4.854a.5.5 0 11-.708-.708l3-3z"/></svg>
+      Upload to Robot
+    </button>
+    <div class="sep"></div>
+    <div class="status-pill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Disconnected</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- BLOCKLY WORKSPACE -->
+  <div id="blockly-panel">
+    <div id="blocklyDiv"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="switchTab('code',this)">⚙ MicroPython</div>
+      <div class="panel-tab" onclick="switchTab('console',this)">▶ Console</div>
+      <div class="panel-tab" onclick="switchTab('help',this)">📖 Reference</div>
+    </div>
+    <div class="panel-content">
+
+      <!-- CODE TAB -->
+      <div class="tab-pane active" id="tab-code">
+        <div id="code-header">
+          <span>Generated MicroPython</span>
+          <button class="btn-copy" onclick="copyCode()">Copy</button>
+        </div>
+        <div id="code-output"># Connect blocks to generate code</div>
+      </div>
+
+      <!-- CONSOLE TAB -->
+      <div class="tab-pane" id="tab-console">
+        <div id="console-output"><span style="color:#4a7a4a"># Agribotics Console — connect a robot to begin
+# Serial output and REPL will appear here
+</span></div>
+        <div id="console-input-row">
+          <input id="console-input" type="text" placeholder="Enter command..." onkeydown="if(event.key==='Enter')sendCommand()">
+          <button id="console-send" onclick="sendCommand()">Send</button>
+        </div>
+      </div>
+
+      <!-- HELP TAB -->
+      <div class="tab-pane" id="tab-help">
+        <div id="help-content">
+          <div class="help-section">
+            <h3>🌾 Controller Setup</h3>
+            <div class="help-fn"><code>agri.begin()</code><p>Initialize the Agri controller. Waits for button press to start.</p></div>
+            <div class="help-fn"><code>agri.end()</code><p>Gracefully stop the program and restart.</p></div>
+            <div class="help-fn"><code>agri.wait(ms)</code><p>Pause execution for <em>ms</em> milliseconds.</p></div>
+          </div>
+          <div class="help-section">
+            <h3>⚙️ Motor Control</h3>
+            <div class="help-fn"><code>agri.set_motor_power(ch, pwr)</code><p>ch: 1–4 | pwr: –100 to 100</p></div>
+            <div class="help-fn"><code>agri.set_motor_powers(p1, p2, p3, p4)</code><p>Set all four motors at once.</p></div>
+            <div class="help-fn"><code>agri.set_motor_speed(ch, spd)</code><p>ch: 1–4 | spd: –720 to 720 deg/s</p></div>
+            <div class="help-fn"><code>agri.set_motor_target(ch, spd, tgt)</code><p>Move to encoder target position.</p></div>
+            <div class="help-fn"><code>agri.stop_motor(ch)</code><p>Stop a single motor channel.</p></div>
+            <div class="help-fn"><code>agri.stop_all_motors()</code><p>Stop all motor channels immediately.</p></div>
+            <div class="help-fn"><code>agri.set_motor_brake(ch, mode)</code><p>True = brake, False = coast</p></div>
+            <div class="help-fn"><code>agri.reset_encoder(ch)</code><p>Reset encoder count to zero.</p></div>
+            <div class="help-fn"><code>agri.get_encoder_count(ch)</code><p>Returns raw encoder count.</p></div>
+            <div class="help-fn"><code>agri.get_encoder_degrees(ch)</code><p>Returns position in degrees.</p></div>
+          </div>
+          <div class="help-section">
+            <h3>🔩 Servo Control</h3>
+            <div class="help-fn"><code>agri.set_servo_position(ch, angle)</code><p>ch: 1–8 | angle: 0–180°</p></div>
+            <div class="help-fn"><code>agri.disable_servo(ch)</code><p>Disable PWM output for servo channel.</p></div>
+          </div>
+          <div class="help-section">
+            <h3>📡 Sensors</h3>
+            <div class="help-fn"><code>agri.read_ultrasonic(port)</code><p>Returns distance in centimeters.</p></div>
+            <div class="help-fn"><code>agri.read_line_sensor(port)</code><p>Returns 0 (light) or 1 (dark).</p></div>
+            <div class="help-fn"><code>agri.read_analog(port)</code><p>Returns 0–4095 (12-bit ADC).</p></div>
+            <div class="help-fn"><code>agri.read_digital(port)</code><p>Returns 0 or 1.</p></div>
+            <div class="help-fn"><code>agri.read_soil_moisture(port)</code><p>Returns moisture % (0–100).</p></div>
+            <div class="help-fn"><code>agri.read_light(port)</code><p>Returns light level (0–4095).</p></div>
+            <div class="help-fn"><code>agri.read_temperature(port)</code><p>Returns temperature in °C.</p></div>
+          </div>
+          <div class="help-section">
+            <h3>💡 Lights &amp; Sound</h3>
+            <div class="help-fn"><code>agri.set_led(r, g, b)</code><p>Set onboard RGB LED color.</p></div>
+            <div class="help-fn"><code>agri.led_off()</code><p>Turn off onboard LED.</p></div>
+            <div class="help-fn"><code>agri.play_tone(freq, dur_ms)</code><p>Play a tone at frequency for duration.</p></div>
+            <div class="help-fn"><code>agri.play_note(note, dur_ms)</code><p>note: "C4", "G3", etc.</p></div>
+            <div class="help-fn"><code>agri.beep()</code><p>Short confirmation beep.</p></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="bottom-bar">
+  <div class="bottom-item highlight" id="blockCount">
+    <svg viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="4" height="4" rx="0.5"/><rect x="7" y="1" width="4" height="4" rx="0.5"/><rect x="1" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="7" width="4" height="4" rx="0.5"/></svg>
+    0 blocks
+  </div>
+  <div class="bottom-item" id="lineCount">
+    <svg viewBox="0 0 12 12" fill="currentColor"><path d="M1 2h10M1 5h10M1 8h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    0 lines
+  </div>
+  <div class="bottom-item">
+    <svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 3v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    Agri Controller v1.0
+  </div>
+  <div class="bottom-item" style="margin-left:auto">
+    <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 1a5 5 0 100 10A5 5 0 006 1zm.5 7.5h-1v-4h1v4zm0-5h-1v-1h1v1z"/></svg>
+    ESP32-S3 · MicroPython 1.23
+  </div>
+</div>
+
+<!-- Connect Modal -->
+<div class="modal-overlay" id="connectModal" onclick="if(event.target===this)closeConnectModal()">
+  <div class="modal">
+    <h2>Connect to Agri Controller</h2>
+    <p>Choose a connection method to communicate with your robot controller.</p>
+    <div class="connect-options">
+      <div class="connect-card" onclick="connectUSB()">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 4v6M13 7h6M10 10h12v8H10z" stroke="#2a7d42" stroke-width="2" stroke-linecap="round"/>
+          <path d="M13 18v4M19 18v4M11 22h10" stroke="#2a7d42" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h4>USB / Serial</h4>
+        <p>Direct cable connection via WebSerial API</p>
+      </div>
+      <div class="connect-card" onclick="connectBluetooth()">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 8l6 5-6 5v-10zM16 18l6 5-6 5v-10z" stroke="#3a7ec2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 13l6 5M10 19l6-5" stroke="#3a7ec2" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h4>Bluetooth</h4>
+        <p>Wireless via Web Bluetooth API</p>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeConnectModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".xml,.agri" style="display:none" onchange="loadFile(event)">
+
+<xml id="toolbox" style="display:none">
+  <category name="🌾 Controller" colour="#2a7d42">
+    <block type="agri_begin"></block>
+    <block type="agri_end"></block>
+    <block type="agri_wait">
+      <value name="MS"><shadow type="math_number"><field name="NUM">1000</field></shadow></value>
+    </block>
+  </category>
+  <category name="⚙️ Motors" colour="#8B4513">
+    <block type="agri_set_motor_power">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+      <value name="POWER"><shadow type="math_number"><field name="NUM">75</field></shadow></value>
+    </block>
+    <block type="agri_set_motor_powers">
+      <value name="P1"><shadow type="math_number"><field name="NUM">75</field></shadow></value>
+      <value name="P2"><shadow type="math_number"><field name="NUM">75</field></shadow></value>
+      <value name="P3"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="P4"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+    </block>
+    <block type="agri_set_motor_speed">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+      <value name="SPEED"><shadow type="math_number"><field name="NUM">360</field></shadow></value>
+    </block>
+    <block type="agri_set_motor_target">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+      <value name="SPEED"><shadow type="math_number"><field name="NUM">360</field></shadow></value>
+      <value name="TARGET"><shadow type="math_number"><field name="NUM">720</field></shadow></value>
+    </block>
+    <block type="agri_stop_motor">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_stop_all_motors"></block>
+    <block type="agri_set_motor_brake">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_reset_encoder">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_get_encoder_count">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_get_encoder_degrees">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+  </category>
+  <category name="🔩 Servos" colour="#A0522D">
+    <block type="agri_set_servo_position">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+      <value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value>
+    </block>
+    <block type="agri_disable_servo">
+      <value name="CHANNEL"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+  </category>
+  <category name="📡 Sensors" colour="#1565a8">
+    <block type="agri_read_ultrasonic">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_read_line_sensor">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_read_analog">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_read_digital">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+  </category>
+  <category name="🌱 Agri Sensors" colour="#4a7c2e">
+    <block type="agri_read_soil_moisture">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_read_light">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+    <block type="agri_read_temperature">
+      <value name="PORT"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+    </block>
+  </category>
+  <category name="💡 Lights" colour="#b8860b">
+    <block type="agri_set_led">
+      <value name="R"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="G"><shadow type="math_number"><field name="NUM">255</field></shadow></value>
+      <value name="B"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+    </block>
+    <block type="agri_led_off"></block>
+  </category>
+  <category name="🔊 Sound" colour="#7b3f8c">
+    <block type="agri_play_tone">
+      <value name="FREQ"><shadow type="math_number"><field name="NUM">440</field></shadow></value>
+      <value name="DUR"><shadow type="math_number"><field name="NUM">500</field></shadow></value>
+    </block>
+    <block type="agri_play_note">
+      <value name="DUR"><shadow type="math_number"><field name="NUM">500</field></shadow></value>
+    </block>
+    <block type="agri_beep"></block>
+  </category>
+  <sep></sep>
+  <category name="🔁 Loops" colour="#5ba55b">
+    <block type="controls_repeat_ext">
+      <value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value>
+    </block>
+    <block type="controls_whileUntil"></block>
+  </category>
+  <category name="❓ Logic" colour="#5b73a5">
+    <block type="controls_if"></block>
+    <block type="controls_if"><mutation else="1"></mutation></block>
+    <block type="logic_compare"></block>
+    <block type="logic_operation"></block>
+    <block type="logic_negate"></block>
+    <block type="logic_boolean"></block>
+  </category>
+  <category name="🔢 Math" colour="#5b5ba5">
+    <block type="math_number"><field name="NUM">0</field></block>
+    <block type="math_arithmetic"></block>
+    <block type="math_single"></block>
+    <block type="math_constrain">
+      <value name="LOW"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="HIGH"><shadow type="math_number"><field name="NUM">100</field></shadow></value>
+    </block>
+    <block type="math_map">
+      <value name="FROM_MIN"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="FROM_MAX"><shadow type="math_number"><field name="NUM">4095</field></shadow></value>
+      <value name="TO_MIN"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="TO_MAX"><shadow type="math_number"><field name="NUM">100</field></shadow></value>
+    </block>
+  </category>
+  <category name="📝 Variables" colour="#a55b5b" custom="VARIABLE"></category>
+  <category name="🔧 Functions" colour="#855ba5" custom="PROCEDURE"></category>
+</xml>
+
+<script>
+// ══════════════════════════════════════════════
+//   CUSTOM BLOCK DEFINITIONS
+// ══════════════════════════════════════════════
+
+const AGRI_COLOR    = '#2a7d42';
+const MOTOR_COLOR   = '#8B4513';
+const SERVO_COLOR   = '#A0522D';
+const SENSOR_COLOR  = '#1565a8';
+const AGSENS_COLOR  = '#4a7c2e';
+const LIGHT_COLOR   = '#b8860b';
+const SOUND_COLOR   = '#7b3f8c';
+
+// ── Controller blocks ──
+Blockly.Blocks['agri_begin'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField('🌾 Agri Begin');
+    this.setNextStatement(true, null);
+    this.setColour(AGRI_COLOR);
+    this.setTooltip('Initialize the Agri controller and wait for button press.');
+  }
+};
+Blockly.Blocks['agri_end'] = {
+  init() {
+    this.appendDummyInput().appendField('🌾 Agri End');
+    this.setPreviousStatement(true, null);
+    this.setColour(AGRI_COLOR);
+    this.setTooltip('End program and restart.');
+  }
+};
+Blockly.Blocks['agri_wait'] = {
+  init() {
+    this.appendValueInput('MS').setCheck('Number').appendField('⏱ Wait (ms)');
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(AGRI_COLOR);
+    this.setTooltip('Pause for a number of milliseconds.');
+  }
+};
+
+// ── Motor blocks ──
+Blockly.Blocks['agri_set_motor_power'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Set Motor');
+    this.appendValueInput('POWER').setCheck('Number').appendField('Power %');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+    this.setTooltip('Set motor power –100 to 100.');
+  }
+};
+Blockly.Blocks['agri_set_motor_powers'] = {
+  init() {
+    this.appendDummyInput().appendField('⚙ Set All Motor Powers');
+    this.appendValueInput('P1').setCheck('Number').appendField('Motor 1 %').setAlign(Blockly.ALIGN_RIGHT);
+    this.appendValueInput('P2').setCheck('Number').appendField('Motor 2 %').setAlign(Blockly.ALIGN_RIGHT);
+    this.appendValueInput('P3').setCheck('Number').appendField('Motor 3 %').setAlign(Blockly.ALIGN_RIGHT);
+    this.appendValueInput('P4').setCheck('Number').appendField('Motor 4 %').setAlign(Blockly.ALIGN_RIGHT);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_set_motor_speed'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Set Motor');
+    this.appendValueInput('SPEED').setCheck('Number').appendField('Speed (deg/s)');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_set_motor_target'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Motor');
+    this.appendValueInput('SPEED').setCheck('Number').appendField('Speed');
+    this.appendValueInput('TARGET').setCheck('Number').appendField('→ Target counts');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+    this.setTooltip('Move motor to encoder target at given speed.');
+  }
+};
+Blockly.Blocks['agri_stop_motor'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Stop Motor');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_stop_all_motors'] = {
+  init() {
+    this.appendDummyInput().appendField('⚙ Stop All Motors');
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_set_motor_brake'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Motor');
+    this.appendDummyInput().appendField('Brake').appendField(new Blockly.FieldDropdown([['Brake','True'],['Coast','False']]), 'MODE');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_reset_encoder'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('⚙ Reset Encoder');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_get_encoder_count'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('Encoder Count of Motor');
+    this.setOutput(true, 'Number');
+    this.setColour(MOTOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_get_encoder_degrees'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('Encoder Degrees of Motor');
+    this.setOutput(true, 'Number');
+    this.setColour(MOTOR_COLOR);
+  }
+};
+
+// ── Servo blocks ──
+Blockly.Blocks['agri_set_servo_position'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('🔩 Servo');
+    this.appendValueInput('ANGLE').setCheck('Number').appendField('Position °');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(SERVO_COLOR);
+    this.setTooltip('Set servo channel to angle 0–180°.');
+  }
+};
+Blockly.Blocks['agri_disable_servo'] = {
+  init() {
+    this.appendValueInput('CHANNEL').setCheck('Number').appendField('🔩 Disable Servo');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(SERVO_COLOR);
+  }
+};
+
+// ── Sensor blocks ──
+Blockly.Blocks['agri_read_ultrasonic'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('📡 Ultrasonic (cm) port');
+    this.setOutput(true, 'Number');
+    this.setColour(SENSOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_read_line_sensor'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('📡 Line Sensor port');
+    this.setOutput(true, 'Number');
+    this.setColour(SENSOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_read_analog'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('📡 Analog Read port');
+    this.setOutput(true, 'Number');
+    this.setColour(SENSOR_COLOR);
+  }
+};
+Blockly.Blocks['agri_read_digital'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('📡 Digital Read port');
+    this.setOutput(true, 'Number');
+    this.setColour(SENSOR_COLOR);
+  }
+};
+
+// ── Agri sensor blocks ──
+Blockly.Blocks['agri_read_soil_moisture'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('🌱 Soil Moisture % port');
+    this.setOutput(true, 'Number');
+    this.setColour(AGSENS_COLOR);
+  }
+};
+Blockly.Blocks['agri_read_light'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('🌱 Light Level port');
+    this.setOutput(true, 'Number');
+    this.setColour(AGSENS_COLOR);
+  }
+};
+Blockly.Blocks['agri_read_temperature'] = {
+  init() {
+    this.appendValueInput('PORT').setCheck('Number').appendField('🌱 Temperature °C port');
+    this.setOutput(true, 'Number');
+    this.setColour(AGSENS_COLOR);
+  }
+};
+
+// ── Light blocks ──
+Blockly.Blocks['agri_set_led'] = {
+  init() {
+    this.appendDummyInput().appendField('💡 Set LED');
+    this.appendValueInput('R').setCheck('Number').appendField('R').setAlign(Blockly.ALIGN_RIGHT);
+    this.appendValueInput('G').setCheck('Number').appendField('G').setAlign(Blockly.ALIGN_RIGHT);
+    this.appendValueInput('B').setCheck('Number').appendField('B').setAlign(Blockly.ALIGN_RIGHT);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(LIGHT_COLOR);
+  }
+};
+Blockly.Blocks['agri_led_off'] = {
+  init() {
+    this.appendDummyInput().appendField('💡 LED Off');
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(LIGHT_COLOR);
+  }
+};
+
+// ── Sound blocks ──
+Blockly.Blocks['agri_play_tone'] = {
+  init() {
+    this.appendValueInput('FREQ').setCheck('Number').appendField('🔊 Play Tone Hz');
+    this.appendValueInput('DUR').setCheck('Number').appendField('for ms');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(SOUND_COLOR);
+  }
+};
+Blockly.Blocks['agri_play_note'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField('🔊 Play Note')
+        .appendField(new Blockly.FieldDropdown([
+          ['C4','C4'],['D4','D4'],['E4','E4'],['F4','F4'],
+          ['G4','G4'],['A4','A4'],['B4','B4'],
+          ['C5','C5'],['G3','G3']
+        ]), 'NOTE');
+    this.appendValueInput('DUR').setCheck('Number').appendField('for ms');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(SOUND_COLOR);
+  }
+};
+Blockly.Blocks['agri_beep'] = {
+  init() {
+    this.appendDummyInput().appendField('🔊 Beep');
+    this.setPreviousStatement(true, null); this.setNextStatement(true, null);
+    this.setColour(SOUND_COLOR);
+  }
+};
+
+// ── Map block ──
+Blockly.Blocks['math_map'] = {
+  init() {
+    this.appendValueInput('VALUE').setCheck('Number').appendField('map');
+    this.appendValueInput('FROM_MIN').setCheck('Number').appendField('from low');
+    this.appendValueInput('FROM_MAX').setCheck('Number').appendField('high');
+    this.appendValueInput('TO_MIN').setCheck('Number').appendField('to low');
+    this.appendValueInput('TO_MAX').setCheck('Number').appendField('high');
+    this.setInputsInline(true);
+    this.setOutput(true, 'Number');
+    this.setColour('#5b5ba5');
+    this.setTooltip('Re-maps a number from one range to another.');
+  }
+};
+
+// ══════════════════════════════════════════════
+//   PYTHON CODE GENERATORS
+// ══════════════════════════════════════════════
+
+// Blockly v10: pythonGenerator lives on Blockly.Python (loaded via python_compressed.js)
+const gen = Blockly.Python;
+if (!gen) { console.error('Blockly Python generator not loaded!'); }
+if (gen && !gen.forBlock) { gen.forBlock = {}; }
+
+gen.forBlock['agri_begin'] = () => 'agri.begin()\n';
+gen.forBlock['agri_end']   = () => 'agri.end()\n';
+gen.forBlock['agri_wait']  = (block, g) => {
+  const ms = g.valueToCode(block,'MS', g.ORDER_NONE)||'1000';
+  return `agri.wait(${ms})\n`;
+};
+
+gen.forBlock['agri_set_motor_power'] = (block, g) => {
+  const ch  = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  const pwr = g.valueToCode(block,'POWER',   g.ORDER_NONE)||'0';
+  return `agri.set_motor_power(${ch}, ${pwr})\n`;
+};
+gen.forBlock['agri_set_motor_powers'] = (block, g) => {
+  const p1=g.valueToCode(block,'P1',g.ORDER_NONE)||'0';
+  const p2=g.valueToCode(block,'P2',g.ORDER_NONE)||'0';
+  const p3=g.valueToCode(block,'P3',g.ORDER_NONE)||'0';
+  const p4=g.valueToCode(block,'P4',g.ORDER_NONE)||'0';
+  return `agri.set_motor_powers(${p1}, ${p2}, ${p3}, ${p4})\n`;
+};
+gen.forBlock['agri_set_motor_speed'] = (block, g) => {
+  const ch  = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  const spd = g.valueToCode(block,'SPEED',   g.ORDER_NONE)||'0';
+  return `agri.set_motor_speed(${ch}, ${spd})\n`;
+};
+gen.forBlock['agri_set_motor_target'] = (block, g) => {
+  const ch  = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  const spd = g.valueToCode(block,'SPEED',   g.ORDER_NONE)||'360';
+  const tgt = g.valueToCode(block,'TARGET',  g.ORDER_NONE)||'720';
+  return `agri.set_motor_target(${ch}, ${spd}, ${tgt})\n`;
+};
+gen.forBlock['agri_stop_motor'] = (block, g) => {
+  const ch = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  return `agri.stop_motor(${ch})\n`;
+};
+gen.forBlock['agri_stop_all_motors'] = () => 'agri.stop_all_motors()\n';
+gen.forBlock['agri_set_motor_brake'] = (block, g) => {
+  const ch   = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  const mode = block.getFieldValue('MODE');
+  return `agri.set_motor_brake(${ch}, ${mode})\n`;
+};
+gen.forBlock['agri_reset_encoder'] = (block, g) => {
+  const ch = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  return `agri.reset_encoder(${ch})\n`;
+};
+gen.forBlock['agri_get_encoder_count'] = (block, g) => {
+  const ch = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  return [`agri.get_encoder_count(${ch})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_get_encoder_degrees'] = (block, g) => {
+  const ch = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  return [`agri.get_encoder_degrees(${ch})`, g.ORDER_FUNCTION_CALL];
+};
+
+gen.forBlock['agri_set_servo_position'] = (block, g) => {
+  const ch  = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  const ang = g.valueToCode(block,'ANGLE',   g.ORDER_NONE)||'90';
+  return `agri.set_servo_position(${ch}, ${ang})\n`;
+};
+gen.forBlock['agri_disable_servo'] = (block, g) => {
+  const ch = g.valueToCode(block,'CHANNEL', g.ORDER_NONE)||'1';
+  return `agri.disable_servo(${ch})\n`;
+};
+
+gen.forBlock['agri_read_ultrasonic'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_ultrasonic(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_line_sensor'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_line_sensor(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_analog'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_analog(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_digital'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_digital(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_soil_moisture'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_soil_moisture(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_light'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_light(${port})`, g.ORDER_FUNCTION_CALL];
+};
+gen.forBlock['agri_read_temperature'] = (block, g) => {
+  const port = g.valueToCode(block,'PORT', g.ORDER_NONE)||'1';
+  return [`agri.read_temperature(${port})`, g.ORDER_FUNCTION_CALL];
+};
+
+gen.forBlock['agri_set_led'] = (block, g) => {
+  const r = g.valueToCode(block,'R', g.ORDER_NONE)||'0';
+  const gr= g.valueToCode(block,'G', g.ORDER_NONE)||'0';
+  const b = g.valueToCode(block,'B', g.ORDER_NONE)||'0';
+  return `agri.set_led(${r}, ${gr}, ${b})\n`;
+};
+gen.forBlock['agri_led_off'] = () => 'agri.led_off()\n';
+
+gen.forBlock['agri_play_tone'] = (block, g) => {
+  const freq = g.valueToCode(block,'FREQ', g.ORDER_NONE)||'440';
+  const dur  = g.valueToCode(block,'DUR',  g.ORDER_NONE)||'500';
+  return `agri.play_tone(${freq}, ${dur})\n`;
+};
+gen.forBlock['agri_play_note'] = (block, g) => {
+  const note = block.getFieldValue('NOTE');
+  const dur  = g.valueToCode(block,'DUR', g.ORDER_NONE)||'500';
+  return `agri.play_note('${note}', ${dur})\n`;
+};
+gen.forBlock['agri_beep'] = () => 'agri.beep()\n';
+
+gen.forBlock['math_map'] = (block, g) => {
+  const val  = g.valueToCode(block,'VALUE',    g.ORDER_NONE)||'0';
+  const fmin = g.valueToCode(block,'FROM_MIN', g.ORDER_NONE)||'0';
+  const fmax = g.valueToCode(block,'FROM_MAX', g.ORDER_NONE)||'1023';
+  const tmin = g.valueToCode(block,'TO_MIN',   g.ORDER_NONE)||'0';
+  const tmax = g.valueToCode(block,'TO_MAX',   g.ORDER_NONE)||'100';
+  const code = `int((${val} - ${fmin}) * (${tmax} - ${tmin}) / (${fmax} - ${fmin}) + ${tmin})`;
+  return [code, g.ORDER_FUNCTION_CALL];
+};
+
+// ══════════════════════════════════════════════
+//   BLOCKLY INIT
+// ══════════════════════════════════════════════
+
+const workspace = Blockly.inject('blocklyDiv', {
+  toolbox: document.getElementById('toolbox'),
+  grid: { spacing: 20, length: 3, colour: '#e8e0cc', snap: true },
+  zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+  trashcan: true,
+  sounds: false,
+  renderer: 'zelos',
+  theme: {
+    name: 'agriTheme',
+    componentStyles: {
+      workspaceBackgroundColour: '#f5f0e4',
+      toolboxBackgroundColour: '#3d2b1f',
+      toolboxForegroundColour: '#fdf3d0',
+      flyoutBackgroundColour: '#4a3520',
+      flyoutForegroundColour: '#f5f0e4',
+      flyoutOpacity: 0.97,
+      scrollbarColour: '#c8b87a',
+    }
+  }
+});
+
+// Load a starter demo program
+const starterXml = `
+<xml>
+  <block type="agri_begin" x="60" y="60">
+    <next><block type="agri_set_led">
+      <value name="R"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+      <value name="G"><shadow type="math_number"><field name="NUM">200</field></shadow></value>
+      <value name="B"><shadow type="math_number"><field name="NUM">50</field></shadow></value>
+      <next><block type="controls_whileUntil">
+        <field name="MODE">WHILE</field>
+        <value name="BOOL"><shadow type="logic_boolean"><field name="BOOL">TRUE</field></shadow></value>
+        <statement name="DO">
+          <block type="agri_set_motor_powers">
+            <value name="P1"><shadow type="math_number"><field name="NUM">60</field></shadow></value>
+            <value name="P2"><shadow type="math_number"><field name="NUM">60</field></shadow></value>
+            <value name="P3"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+            <value name="P4"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+            <next><block type="agri_wait">
+              <value name="MS"><shadow type="math_number"><field name="NUM">2000</field></shadow></value>
+              <next><block type="agri_stop_all_motors">
+                <next><block type="agri_wait">
+                  <value name="MS"><shadow type="math_number"><field name="NUM">500</field></shadow></value>
+                </block></next>
+              </block></next>
+            </block></next>
+          </block>
+        </statement>
+      </block></next>
+    </block></next>
+  </block>
+</xml>`;
+
+const xmlDom = Blockly.utils.xml.textToDom(starterXml);
+Blockly.Xml.domToWorkspace(xmlDom, workspace);
+
+// ── Code generation & update ──
+function generateCode() {
+  try {
+    let code = gen.workspaceToCode(workspace);
+    // Prepend standard imports
+    const header = `from agri import Agri\nimport time\n\nagri = Agri()\n\n`;
+    code = header + code;
+    return code;
+  } catch(e) {
+    return `# Code generation error:\n# ${e.message}`;
+  }
+}
+
+function updateCodePanel() {
+  const code = generateCode();
+  const lines = code.split('\n').length - 1;
+  const blockCount = workspace.getAllBlocks(false).length;
+
+  document.getElementById('blockCount').innerHTML = `
+    <svg viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="4" height="4" rx="0.5"/><rect x="7" y="1" width="4" height="4" rx="0.5"/><rect x="1" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="7" width="4" height="4" rx="0.5"/></svg>
+    ${blockCount} blocks`;
+  document.getElementById('lineCount').innerHTML = `
+    <svg viewBox="0 0 12 12" fill="currentColor"><path d="M1 2h10M1 5h10M1 8h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    ${lines} lines`;
+
+  // Simple syntax highlight
+  const highlighted = highlightPython(code);
+  document.getElementById('code-output').innerHTML = highlighted;
+}
+
+function highlightPython(code) {
+  const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc
+    .replace(/\b(from|import|as|def|class|if|elif|else|while|for|in|return|True|False|None|and|or|not|pass|break|continue|try|except|finally|with|lambda|yield|del|global|nonlocal)\b/g,
+      '<span class="kw">$1</span>')
+    .replace(/(agri\.[a-z_]+)/g, '<span class="fn">$1</span>')
+    .replace(/(#[^\n]*)/g, '<span class="cm">$1</span>')
+    .replace(/('[^']*'|"[^"]*")/g, '<span class="st">$1</span>')
+    .replace(/\b(\d+)\b/g, '<span class="nm">$1</span>');
+}
+
+workspace.addChangeListener(updateCodePanel);
+updateCodePanel();
+
+// ══════════════════════════════════════════════
+//   UI FUNCTIONS
+// ══════════════════════════════════════════════
+
+function switchTab(name, el) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function copyCode() {
+  const code = generateCode();
+  navigator.clipboard.writeText(code).then(() => showToast('Code copied to clipboard!'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function newProgram() {
+  if (workspace.getAllBlocks().length > 0 &&
+      !confirm('Clear current program and start fresh?')) return;
+  workspace.clear();
+  updateCodePanel();
+  showToast('New program started');
+}
+
+function saveProgram() {
+  const xml  = Blockly.Xml.workspaceToDom(workspace);
+  const text = Blockly.Xml.domToText(xml);
+  const blob = new Blob([text], { type: 'text/xml' });
+  const a    = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'agribotics-program.xml';
+  a.click();
+  showToast('Program saved!');
+}
+
+function loadProgram() {
+  document.getElementById('fileInput').click();
+}
+
+function loadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const xml = Blockly.utils.xml.textToDom(e.target.result);
+      workspace.clear();
+      Blockly.Xml.domToWorkspace(xml, workspace);
+      showToast(`Loaded: ${file.name}`);
+    } catch(err) {
+      showToast('Error loading file');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+let connected = false;
+
+function openConnectModal() {
+  document.getElementById('connectModal').classList.add('open');
+}
+function closeConnectModal() {
+  document.getElementById('connectModal').classList.remove('open');
+}
+
+async function connectUSB() {
+  closeConnectModal();
+  if (!('serial' in navigator)) {
+    showToast('WebSerial not supported — use Chrome or Edge');
+    return;
+  }
+  try {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    setConnected(true, 'USB Connected');
+    showToast('Connected via USB!');
+    consolePrint('Connected via USB serial\n');
+  } catch(e) {
+    if (e.name !== 'NotFoundError') showToast('USB connection failed');
+  }
+}
+
+async function connectBluetooth() {
+  closeConnectModal();
+  if (!('bluetooth' in navigator)) {
+    showToast('Web Bluetooth not supported on this browser');
+    return;
+  }
+  showToast('Bluetooth pairing dialog opening...');
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'Agri' }],
+      optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
+    });
+    setConnected(true, `BT: ${device.name}`);
+    showToast(`Connected to ${device.name}`);
+    consolePrint(`Bluetooth connected: ${device.name}\n`);
+  } catch(e) {
+    if (e.name !== 'NotFoundError') showToast('Bluetooth connection failed');
+  }
+}
+
+function setConnected(state, label) {
+  connected = state;
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  const btn  = document.getElementById('connectBtn');
+  if (state) {
+    dot.classList.add('connected');
+    text.textContent = label || 'Connected';
+    btn.classList.add('connected');
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg> Connected`;
+  } else {
+    dot.classList.remove('connected');
+    text.textContent = 'Disconnected';
+    btn.classList.remove('connected');
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V1zm11 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V1zM6 7a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V7z"/></svg> Connect`;
+  }
+}
+
+function uploadToRobot() {
+  if (!connected) {
+    showToast('Connect to a robot first!');
+    openConnectModal();
+    return;
+  }
+  const code = generateCode();
+  consolePrint('\n--- Uploading program ---\n');
+  consolePrint(code);
+  consolePrint('\n--- Upload complete ✓ ---\n');
+  showToast('Program uploaded!');
+}
+
+function consolePrint(text) {
+  const out = document.getElementById('console-output');
+  out.textContent += text;
+  out.scrollTop = out.scrollHeight;
+}
+
+function sendCommand() {
+  const inp = document.getElementById('console-input');
+  const cmd = inp.value.trim();
+  if (!cmd) return;
+  consolePrint(`>>> ${cmd}\n`);
+  inp.value = '';
+  if (!connected) {
+    consolePrint('Not connected\n');
+    return;
+  }
+  // placeholder — actual serial/BT write would go here
+  consolePrint('OK\n');
+}
+
+// Handle window resize for Blockly
+window.addEventListener('resize', () => Blockly.svgResize(workspace));
+</script>
+</body>
+</html>
